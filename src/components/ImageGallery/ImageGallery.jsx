@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import sass from './ImageGallery.module.scss';
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import { fetchData } from 'helpers/fetchAPI';
@@ -8,99 +8,99 @@ import Modal from 'components/Modal';
 import PropTypes from 'prop-types';
 import Error from 'components/Error';
 
-class ImageGallery extends Component {
-  state = {
-    images: [],
-    page: 1,
-    status: 'idle',
-    isModalOpen: false,
-    modalImg: '',
-  };
+const ImageGallery = ({ query }) => {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState('idle');
+  const [isModalOpen, setisModalOpen] = useState(false);
+  const [modalIMG, setModalIMG] = useState('');
+  const isFisrtRender = useRef(true);
+  const prevQuery = useRef('');
 
-  componentDidUpdate(prevProps, prevState) {
-    const { page, images } = this.state;
+  const getData = useCallback(() => {
+    fetchData(query, 1).then(response => {
+      if (!response.hits.length) {
+        setStatus('rejected');
+        prevQuery.current = query;
+        return;
+      }
+      setImages(response.hits);
+      setStatus('resolved');
+      setPage(1);
+      if (response.totalHits === response.hits.length) {
+        setStatus('idle');
+      }
+      prevQuery.current = query;
+    });
+  }, [query]);
+
+  useEffect(() => {
+    if (isFisrtRender.current) {
+      isFisrtRender.current = false;
+      return;
+    }
+
     try {
-      if (page !== prevState.page && page !== 1) {
-        fetchData(this.props.query, page).then(response => {
-          this.setState({
-            images: [...images, ...response.hits],
-            status: 'resolved',
-          });
-        });
+      if (prevQuery.current !== query) {
+        getData();
       }
 
-      if (prevProps.query !== this.props.query) {
-        fetchData(this.props.query, 1).then(response => {
-          if (!response.hits.length) {
-            this.setState({ status: 'rejected' });
-            return;
-          }
-
-          this.setState({
-            images: response.hits,
-            status: 'resolved',
-            page: 1,
-          });
-
-          if (response.totalHits === images.length + response.hits.length) {
-            this.setState({ status: 'idle' });
-          }
-        });
+      if (query.length >= 1 && page === 1) {
+        getData();
       }
     } catch (error) {
       console.error(error);
     }
-  }
+  }, [getData, page, query]);
 
-  onLoadMore = () => {
-    this.setState({ status: 'pending', page: this.state.page + 1 });
+  const onLoadMore = () => {
+    setStatus('pending');
+    setPage(prev => prev + 1);
+
+    fetchData(query, page + 1).then(response => {
+      setImages(prev => [...prev, ...response.hits]);
+      setStatus('resolved');
+    });
   };
 
-  showModal = e => {
-    this.setState({ isModalOpen: true });
-    this.largeItemFinder(e);
+  const showModal = e => {
+    setisModalOpen(true);
+    largeItemFinder(e);
   };
 
-  closeModal = e => {
-    if (e.target === e.currentTarget) this.setState({ isModalOpen: false });
+  const closeModal = ({ target, currentTarget }) => {
+    if (target === currentTarget) setisModalOpen(false);
   };
 
-  largeItemFinder = e => {
-    const seachItem = this.state.images.find(
-      el => el.webformatURL === e.target.src
-    );
+  const largeItemFinder = ({ target }) => {
+    const seachItem = images.find(el => el.webformatURL === target.src);
     const largeImage = seachItem.largeImageURL;
-    this.setState({ modalImg: largeImage });
+    setModalIMG(largeImage);
   };
 
-  render() {
-    const { status, images, modalImg, isModalOpen } = this.state;
-    return (
-      <>
-        <ul className={sass.imageGallery}>
-          {this.state.images.map(({ id, webformatURL, tags }) => {
-            return (
-              <ImageGalleryItem
-                key={id}
-                image={webformatURL}
-                tags={tags}
-                showModal={this.showModal}
-              />
-            );
-          })}
-        </ul>
-        {status === 'pending' && <Loader />}
-        {status !== 'idle' && status !== 'pending' && images.length !== 0 && (
-          <Button onLoadMore={this.onLoadMore} />
-        )}
-        {status === 'rejected' && <Error />}
-        {isModalOpen && (
-          <Modal largeImage={modalImg} closeModal={this.closeModal} />
-        )}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <ul className={sass.imageGallery}>
+        {images.map(({ id, webformatURL, tags }) => {
+          return (
+            <ImageGalleryItem
+              key={id}
+              image={webformatURL}
+              tags={tags}
+              showModal={showModal}
+            />
+          );
+        })}
+      </ul>
+      {status === 'pending' && <Loader />}
+      {status !== 'idle' && status !== 'pending' && images.length !== 0 && (
+        <Button onLoadMore={onLoadMore} />
+      )}
+      {status === 'rejected' && <Error />}
+      {isModalOpen && <Modal largeImage={modalIMG} closeModal={closeModal} />}
+    </>
+  );
+};
 
 ImageGallery.propTypes = {
   query: PropTypes.string.isRequired,

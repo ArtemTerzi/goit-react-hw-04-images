@@ -1,25 +1,21 @@
-import { Component } from 'react';
+import { Component, useState } from 'react';
 import Searchbar from 'components/Searchbar';
 import ImageGallery from 'components/ImageGallery';
 import sass from './App.module.scss';
 
-class App extends Component {
-  state = {
-    query: '',
+const App = () => {
+  const [query, setQuery] = useState('');
+
+  const handleSubmit = query => {
+    setQuery(query);
   };
 
-  handleSubmit = query => {
-    this.setState({ query });
-  };
-
-  render() {
-    return (
-      <div className={sass.app}>
-        <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery query={this.state.query} />
-      </div>
-    );
-  }
-}
+  return (
+    <div className={sass.app}>
+      <Searchbar onSubmit={handleSubmit} />
+      <ImageGallery query={query} />
+    </div>
+  );
+};
 
 export default App;

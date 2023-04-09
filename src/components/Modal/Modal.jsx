@@ -1,36 +1,30 @@
 import sass from './Modal.module.scss';
-import { Component } from 'react';
+import { useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-class Modal extends Component {
-  state = { modalImg: this.props.largeImage };
+const Modal = ({ closeModal, largeImage }) => {
+  const onPressESC = useCallback(
+    ({ code, target, currentTarget }) => {
+      if (code === 'Escape') {
+        closeModal(target, currentTarget);
+      }
+    },
+    [closeModal]
+  );
 
-  onPressESC = ({ code }) => {
-    if (code === 'Escape') {
-      this.props.closeModal(this.state);
-    }
-  };
+  useEffect(() => {
+    window.addEventListener('keydown', onPressESC);
+    return () => window.removeEventListener('keydown', onPressESC);
+  }, [onPressESC]);
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.onPressESC);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.onPressESC);
-  }
-
-  render() {
-    const { closeModal, largeImage, tags } = this.props;
-
-    return (
-      <div className={sass.overlay} onClick={closeModal}>
-        <div className={sass.modal}>
-          <img src={largeImage} alt={tags} />
-        </div>
+  return (
+    <div className={sass.overlay} onClick={closeModal}>
+      <div className={sass.modal}>
+        <img src={largeImage} alt="large" />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 Modal.propTypes = {
   closeModal: PropTypes.func.isRequired,
