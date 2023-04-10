@@ -63,30 +63,24 @@ const ImageGallery = ({ query }) => {
     });
   };
 
-  const showModal = e => {
+  const showModal = image => {
     setisModalOpen(true);
-    return images;
-    // largeItemFinder(e);
+    setModalIMG(image);
   };
 
   const closeModal = ({ target, currentTarget }) => {
     if (target === currentTarget) setisModalOpen(false);
   };
 
-  const largeItemFinder = ({ target }) => {
-    const seachItem = images.find(el => el.webformatURL === target.src);
-    const largeImage = seachItem.largeImageURL;
-    setModalIMG(largeImage);
-  };
-
   return (
     <>
       <ul className={sass.imageGallery}>
-        {images.map(({ id, webformatURL, tags }) => {
+        {images.map(({ id, webformatURL, tags, largeImageURL }) => {
           return (
             <ImageGalleryItem
               key={id}
               image={webformatURL}
+              largeImage={largeImageURL}
               tags={tags}
               showModal={showModal}
             />
