@@ -41,11 +41,11 @@ const ImageGallery = ({ query }) => {
     }
 
     try {
-      if (prevQuery.current !== query) {
+      if (prevQuery.current !== query && page !== 1) {
         getData();
       }
 
-      if (query.length >= 1 && page === 1) {
+      if (query.length >= 1 && page === 1 && prevQuery.current !== query) {
         getData();
       }
     } catch (error) {
@@ -65,7 +65,8 @@ const ImageGallery = ({ query }) => {
 
   const showModal = e => {
     setisModalOpen(true);
-    largeItemFinder(e);
+    return images;
+    // largeItemFinder(e);
   };
 
   const closeModal = ({ target, currentTarget }) => {
