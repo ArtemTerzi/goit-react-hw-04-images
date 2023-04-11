@@ -11,23 +11,23 @@ const App = () => {
   const [page, setPage] = useState(1);
 
   const getData = useCallback(() => {
-    fetchData(query, 1).then(response => {
+    setStatus('pending');
+    fetchData(query, page).then(response => {
       if (!response.hits.length) {
         setStatus('rejected');
         return;
       }
-      setImages(response.hits);
+      setImages(prevImages => [...prevImages, ...response.hits]);
       setStatus('resolved');
-      setPage(1);
       if (response.totalHits === response.hits.length) {
         setStatus('idle');
       }
     });
-  }, [query]);
+  }, [page, query]);
 
   useEffect(() => {
     try {
-      if (query && page === 1) {
+      if (query) {
         getData();
       }
     } catch (error) {
@@ -36,13 +36,7 @@ const App = () => {
   }, [getData, page, query]);
 
   const onLoadMore = () => {
-    setStatus('pending');
     setPage(prev => prev + 1);
-
-    fetchData(query, page + 1).then(response => {
-      setImages(prev => [...prev, ...response.hits]);
-      setStatus('resolved');
-    });
   };
 
   const handleSubmit = query => {
